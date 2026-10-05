@@ -319,7 +319,7 @@ const PAL=['#0f766e','#b45309','#4338ca','#be123c','#4d7c0f','#0e7490','#7e22ce'
 const MODELS={EEI:'Model 1: equal variances, covariances fixed to 0',VVI:'Model 2: varying variances, covariances fixed to 0',EEE:'Model 3: equal variances and covariances',VVV:'Model 6: varying variances and covariances'};
 const MIDX={EEI:1,VVI:2,EEE:3,VVV:6};
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',4000)}
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&','<':'<','>':'>','"':'"'}[c]));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fx=(x,d=3)=>(x===null||x===undefined||!isFinite(x))?'—':Number(x).toFixed(d);
 const fp=p=>(p===null||p===undefined||!isFinite(p))?'—':(p<0.001?'< .001':p.toFixed(3));
 const tick=()=>new Promise(r=>setTimeout(r,0));
@@ -400,7 +400,7 @@ function setData(rows){
  const num=nm.filter(n=>{const ne=cols[n].filter(v=>String(v).trim()!=='');if(!ne.length)return false;
   const ok=ne.filter(v=>!isNaN(safeNum(v))).length;return ok/ne.length>0.9});
  S.data={names:nm,cols,n:body.length,num};S.lpa=null;S.fin=null;S.lpta=null;
- $('dataInfo').textContent='Rows: '+body.length+'   Columns: '+nm.length+'\nNumeric columns: '+num.length;
+ $('dataInfo').textContent='Rows: '+body.length+'    Columns: '+nm.length+'\nNumeric columns: '+num.length;
  let h='<table><tr>'+nm.map(n=>'<th>'+esc(n)+'</th>').join('')+'</tr>';
  body.slice(0,50).forEach(r=>{h+='<tr>'+nm.map((n,j)=>'<td>'+esc(r[j])+'</td>').join('')+'</tr>'});$('preview').innerHTML=h+'</table>';
  picker('lpaVars',num);picker('t1Vars',num);picker('t2Vars',num);
@@ -616,7 +616,7 @@ $('runDemo').addEventListener('click',()=>{const F=S.fin;if(!F){toast('Run the L
  if($('demoType').value==='continuous'){
   const g=lv.map(l=>{const y=[];grp.forEach((c,i)=>{if(c===l){const x=safeNum(F.cols[v][i]);if(isFinite(x))y.push(x)}});return y});
   if(g.some(a=>a.length<2)){$('demoOut').textContent='Variable is not numeric or a profile has fewer than 2 valid values.';return}
-  out.push('=== DESCRIPTIVES BY PROFILE ===');lv.forEach((l,i)=>out.push('Profile '+l+':  n = '+g[i].length+'  Mean = '+mean(g[i]).toFixed(3)+'  SD = '+sd(g[i]).toFixed(3)));
+  out.push('=== DESCRIPTIVES BY PROFILE ===');lv.forEach((l,i)=>out.push('Profile '+l+':   n = '+g[i].length+'   Mean = '+mean(g[i]).toFixed(3)+'   SD = '+sd(g[i]).toFixed(3)));
   if(lv.length===2){const[a,b]=g,va=sd(a)**2/a.length,vb=sd(b)**2/b.length,t=(mean(a)-mean(b))/Math.sqrt(va+vb),df=(va+vb)**2/(va**2/(a.length-1)+vb**2/(b.length-1));
    out.push('','=== WELCH t-TEST ===','t = '+t.toFixed(3)+', df = '+df.toFixed(2)+', p = '+fp(pT2(t,df)));
    const sp=Math.sqrt(((a.length-1)*sd(a)**2+(b.length-1)*sd(b)**2)/(a.length+b.length-2));out.push("Cohen's d = "+((mean(a)-mean(b))/sp).toFixed(3))}
@@ -629,7 +629,7 @@ $('runDemo').addEventListener('click',()=>{const F=S.fin;if(!F){toast('Run the L
    out.push('','=== POST-HOC: pairwise Welch t-tests, Bonferroni-adjusted ===');
    const m=k*(k-1)/2;for(let i=0;i<k;i++)for(let j=i+1;j<k;j++){const a=g[i],b=g[j],va=sd(a)**2/a.length,vb=sd(b)**2/b.length,t=(mean(a)-mean(b))/Math.sqrt(va+vb),df=(va+vb)**2/(va**2/(a.length-1)+vb**2/(b.length-1));
     const sp=Math.sqrt(((a.length-1)*sd(a)**2+(b.length-1)*sd(b)**2)/(a.length+b.length-2));
-    out.push('Profile '+lv[i]+' vs '+lv[j]+':  diff = '+(mean(a)-mean(b)).toFixed(3)+',  t = '+t.toFixed(3)+',  adj. p = '+fp(Math.min(1,pT2(t,df)*m))+",  d = "+((mean(a)-mean(b))/sp).toFixed(2))}
+    out.push('Profile '+lv[i]+' vs '+lv[j]+':   diff = '+(mean(a)-mean(b)).toFixed(3)+',   t = '+t.toFixed(3)+',   adj. p = '+fp(Math.min(1,pT2(t,df)*m))+",   d = "+((mean(a)-mean(b))/sp).toFixed(2))}
    out.push('','Note: Tukey HSD is not implemented in the browser version; Bonferroni-adjusted Welch tests are reported instead.')}
  }else{
   const cats=[...new Set(F.cols[v].map(x=>String(x)))].filter(x=>x.trim()!=='').sort();
@@ -652,7 +652,6 @@ function mnlogit(Xd,y,J){const n=Xd.length,q=Xd[0].length,m=(J-1)*q;let beta=new
    const mx=Math.max(...eta);const e=eta.map(v=>Math.exp(v-mx));const sm=e.reduce((a,b)=>a+b,0);const P=e.map(v=>v/sm);ll+=Math.log(P[y[i]]);
    for(let j=1;j<J;j++){const rj=(y[i]===j?1:0)-P[j];for(let a=0;a<q;a++){g[(j-1)*q+a]+=rj*x[a];
      for(let l=1;l<J;l++){const w=P[j]*((j===l?1:0)-P[l]);if(l>=j)for(let b=0;b<q;b++){I[(j-1)*q+a][(l-1)*q+b]+=w*x[a]*x[b]}}}}}
-  for(let r=0;r<m;r++)for(let c=0;c<r;c++){} 
   for(let r=0;r<m;r++)for(let c=0;c<m;c++){if(I[r][c]===0&&I[c][r]!==0)I[r][c]=I[c][r]}
   for(let r=0;r<m;r++)I[r][r]+=1e-8;
   const inv=solveInv(I);if(!inv)return null;
@@ -709,17 +708,16 @@ $('runLpta').addEventListener('click',async()=>{
   lineChart('plot2','leg2',v2,profileSeries(B,v2,c2.cl,K),$('lptaScale').checked?'Z-score mean':'Raw mean');
   const n=idx.length,po=cnt.reduce((s,r,i)=>s+r[i],0)/n,cs=cnt[0].map((_,j)=>cnt.reduce((a,r)=>a+r[j],0)),pe=rs.reduce((s,v,i)=>s+v*cs[i],0)/n**2;
   const ok=rs.every(v=>v>0)&&cs.every(v=>v>0);const out=['=== LATENT PROFILE TRANSITION ANALYSIS (LPTA) SUMMARY ===','','Longitudinal complete cases (n): '+n,
-   'Covariance structure: '+model+' | random starts per time point: '+nst+' | seed: '+seed,
-   'Best-LL starts T1: '+m1.starts.hits+'/'+m1.starts.n+' (LogLik '+m1.ll.toFixed(2)+') | T2: '+m2.starts.hits+'/'+m2.starts.n+' (LogLik '+m2.ll.toFixed(2)+')',
-   'Relative entropy T1: '+fx(entropyRel(c1.z,K))+' | T2: '+fx(entropyRel(c2.z,K)),'','Row transition probabilities (%):'];
+    'Covariance structure: '+model+' | random starts per time point: '+nst+' | seed: '+seed,
+    'Best-LL starts T1: '+m1.starts.hits+'/'+m1.starts.n+' (LogLik '+m1.ll.toFixed(2)+') | T2: '+m2.starts.hits+'/'+m2.starts.n+' (LogLik '+m2.ll.toFixed(2)+')',
+    'Relative entropy T1: '+fx(entropyRel(c1.z,K))+' | T2: '+fx(entropyRel(c2.z,K)),'','Row transition probabilities (%):'];
   cnt.forEach((row,i)=>out.push('T1-P'+(i+1)+'  '+row.map(c=>(rs[i]?100*c/rs[i]:0).toFixed(1).padStart(7)).join('')));
   if(ok){const st=crosstabStats(cnt);out.push('','Chi-square test of association between T1 and T2 profiles:','X2('+st.df+') = '+st.chi.toFixed(3)+', p = '+fp(st.p),"Cramer's V = "+st.V.toFixed(3));if(st.minE<5)out.push('Warning: some expected counts < 5; interpret p with caution.')}
   out.push('','Stay rate if labels correspond (diagonal): '+(100*po).toFixed(1)+'%',"Cohen's kappa (diagonal agreement): "+((po-pe)/(1-pe)).toFixed(3),
-   'Note: diagonal-based indices assume Profile i at T1 is substantively the same as Profile i at T2. Verify with the plots.');
+    'Note: diagonal-based indices assume Profile i at T1 is substantively the same as Profile i at T2. Verify with the plots.');
   $('lptaOut').textContent=out.join('\n');$('lptaProg').textContent='Done.';toast('LPTA finished.')}
  catch(e){console.error(e);toast('Error: '+e.message)}
  finally{pool.close();btn.disabled=false}});
 </script>
 </body>
 </html>
-
